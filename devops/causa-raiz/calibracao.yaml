@@ -1,5 +1,5 @@
 # CP09 — calibração do juiz (NÃO é o gate; é a verificação de alinhamento juiz x humano).
-# O provider `echo` devolve o conteúdo do arquivo como "saída"; o juiz (Gemini) pontua
+# O provider `echo` devolve o conteúdo do arquivo como "saída"; o juiz (OpenAI) pontua
 # EXATAMENTE as duas saídas de referência que já foram avaliadas à mão:
 #   rca-boa.md  -> humano 2/2/2/2 (8)  -> esperado: PASS
 #   rca-ruim.md -> humano 0/0/1/0 (~1) -> esperado: FAIL (gate reprova)
@@ -15,7 +15,7 @@ providers:
 
 tests:
   - options:
-      provider: google:gemini-2.5-flash   # o JUIZ (grader)
+      provider: openai:chat:gpt-5.4-mini   # o JUIZ (grader)
     assert:
       - type: llm-rubric
         value: |

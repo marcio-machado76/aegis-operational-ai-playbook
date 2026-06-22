@@ -35,8 +35,8 @@ inverte (economia vs risco de cobertura).
 | Decisão | Escolha | Alternativas consideradas |
 |---|---|---|
 | **Gatilho** | `pull_request` + `workflow_dispatch` | Adicionar `push: main` (re-roda após merge — redundante se o PR já barrou, mas pega push direto); `schedule` noturno (pega *drift* de provedor) — descartados por ora para não gastar à toa |
-| **Chaves** | GitHub **Secrets** do repo (`GEMINI_API_KEY`, `GOOGLE_API_KEY`, `GROQ_API_KEY`) | Hardcode no YAML (**nunca** — vazamento); OIDC/cofre externo (exagero para chaves de free tier) |
-| **Custo por PR** | Modelos free/baratos (Gemini free tier, Groq free) → ~centavos; rodar só em PR (não em todo push) já corta execuções | Rodar em todo push dobraria o custo sem ganho real (o PR é onde a regressão é barrada antes do merge) |
+| **Chaves** | GitHub **Secrets** do repo (`OPENAI_API_KEY`, `GROQ_API_KEY`) | Hardcode no YAML (**nunca** — vazamento); OIDC/cofre externo (exagero para este porte de projeto) |
+| **Custo por PR** | Modelos baratos (OpenAI mini + Groq) → custo baixo e previsível; rodar só em PR (não em todo push) já corta execuções | Rodar em todo push dobraria o custo sem ganho real (o PR é onde a regressão é barrada antes do merge) |
 
 O `workflow_dispatch` foi adicionado para rodar a suíte **manualmente** (re-checar após um erro
 transitório, validar sem abrir PR) — custo zero, conveniência alta.
@@ -66,14 +66,12 @@ limit (429)** — não é regressão do prompt, mas derrubaria o gate determiní
 A distinção *regressão × flake transitório* é parte do desenho: o gate confia nas retentativas
 do promptfoo e, no limite, no re-run manual — sem retry agressivo que esconda regressão de verdade.
 
-**Caso real observado:** em runs do Gemini no free tier, o conteúdo saía correto, mas chamadas
-sequenciais demais provocavam throttling/backoff e inflavam o tempo até virar erro de timeout ou
-falso vermelho de latência. Não é regressão de prompt. Correção adotada: rodar o eval **serial
-(`-j 1`)** no pipeline **e** espaçar as chamadas com `evaluateOptions.delay`, além de aumentar o
-`timeoutMs` para absorver backoff transitório sem matar a execução cedo demais. A intenção não é
-aceitar prompt lento; é impedir que fila/rate limit do provedor sejam confundidos com regressão de
-conteúdo. Alternativa se ainda flutuar (descartada por ora): tornar latência/custo **informativos**
-no CI (só o conteúdo barra), já que latência depende da carga do provedor, não da qualidade do prompt.
+**Caso real observado:** em runs com Gemini no free tier, o conteúdo saía correto, mas chamadas
+sequenciais demais provocavam throttling/backoff, 429 e timeout — falsos vermelhos num gate
+bloqueante. A mitigação final foi dupla: rodar o eval **serial (`-j 1`)** com espaçamento entre
+chamadas e substituir o provedor bloqueante por OpenAI, deixando fora do caminho crítico a
+instabilidade do free tier. A intenção não é aceitar prompt lento; é impedir que limitações do
+provedor sejam confundidas com regressão de conteúdo.
 
 ## Cobertura de testes da biblioteca
 

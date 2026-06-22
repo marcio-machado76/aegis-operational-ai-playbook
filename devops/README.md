@@ -35,8 +35,8 @@ Entram aqui prompts relacionados a:
 Os prompts de saída estruturada têm um `promptfooconfig.yaml` ao lado do `prompt.md`
 (o teste viaja junto com o prompt). Rodados com `npx promptfoo@latest eval --no-cache`.
 
-- **Provedores (dois fornecedores distintos, ambos gratuitos):**
-  `google:gemini-2.5-flash` + `groq:llama-3.3-70b-versatile` (Meta/Llama na nuvem).
+- **Provedores no gate determinístico:** `openai:chat:gpt-5.4-mini` +
+  `groq:llama-3.3-70b-versatile` (Meta/Llama na nuvem).
 - **Limites operacionais em todos:** latência ≤ 5s e custo ≤ US$ 0,01.
 
 **Ajustes feitos durante o CP08 (o caminho, não só o destino):**
@@ -44,17 +44,12 @@ Os prompts de saída estruturada têm um `promptfooconfig.yaml` ao lado do `prom
    na máquina disponível a inferência ficou lenta/instável demais para o orçamento de 5s.
    Troquei por Groq (mesma família Meta/Llama, na nuvem) — o trade-off privacidade-local ×
    confiabilidade-nuvem na prática.
-2. **`gemini-2.0-flash` → `gemini-2.5-flash`.** O 2.0-flash retornava `limit: 0` no free tier
-   (HTTP 429 → backoff de 60s, que parecia "travamento"). O 2.5-flash é permitido no tier.
-3. **`thinkingBudget: 0` no Gemini.** O 2.5-flash faz *reasoning* por padrão e estourava os 5s
-   de latência (≈4,5k tokens de reasoning). Desliguei o thinking — modelo permitido **e** rápido.
-   É o trade-off custo/latência × modelo que o CP08 manda pesar.
-4. **Assert de custo tolerante.** O `type: cost` nativo do promptfoo dá erro em provedores sem
+2. **Gemini free tier → OpenAI.** O gate chegou a usar Gemini 2.5 Flash, mas a combinação de
+   rate limit 429 e backoff do free tier gerou flakes demais para CI bloqueante. O provider
+   determinístico foi trocado para OpenAI, mantendo Groq como segundo provedor de comparação.
+3. **Assert de custo tolerante.** O `type: cost` nativo do promptfoo dá erro em provedores sem
    tabela de preço (Groq, e modelo local). Reescrevi como `javascript` que valida ≤ US$ 0,01
-   quando há custo (Gemini) e passa quando o provedor não reporta.
-5. **Erro 503 transitório** (Google "high demand") apareceu numa chamada da `nota-de-triagem` —
-   não é regressão de prompt. Fica como nota para o gate do CP10: erro transitório de infra
-   (503/429) ≠ regressão; o pipeline não deve reprovar o build por isso.
+   quando há custo (OpenAI) e passa quando o provedor não reporta.
 
 **Resultados (`promptfoo eval`):**
 

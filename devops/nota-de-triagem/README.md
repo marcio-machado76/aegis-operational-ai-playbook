@@ -26,7 +26,7 @@ Entrada (`alerta_cru`):
 2026-05-13 03:11:00 UTC [Relay] ingest reject rate 6% for 8min, tenant wakanda-systems,
 buffer saturated after deploy 02:55
 ```
-Saída (Gemini):
+Saída (exemplo):
 ```
 ALERTA: Relay - taxa de rejeição de ingestão em 6% por 8min no tenant wakanda-systems
 IMPACTO: telemetria degradada e potencial perda de dados para o tenant wakanda-systems
@@ -43,10 +43,9 @@ ESCALAR PARA: @relay-core se a rejeição não cair em 10min
 
 ## Testes (CP08)
 `promptfooconfig.yaml` nesta pasta, rodado contra os 3 alertas crus do CP02 em 2 provedores
-(Gemini 2.5-flash + Groq/Llama 3.3). Asserts: contém os 5 rótulos (ALERTA / IMPACTO / HIPÓTESE
+(OpenAI GPT-5.4 mini + Groq/Llama 3.3). Asserts: contém os 5 rótulos (ALERTA / IMPACTO / HIPÓTESE
 INICIAL / AÇÃO IMEDIATA / ESCALAR PARA), regex `ESCALAR PARA:.*@\w+`, ≤ 8 linhas, latência ≤ 5s,
-custo ≤ US$ 0,01. **Resultado: 5 passed / 0 failed** (+1 erro 503 transitório do Google numa
-chamada — instabilidade de servidor, não regressão de prompt). Setup e ajustes comuns: ver o
+custo ≤ US$ 0,01. Setup e ajustes comuns: ver o
 [README da categoria](../README.md) (seção *Testes (CP08)*).
 
 ## Curadoria (CP02)
@@ -76,5 +75,5 @@ chamada — instabilidade de servidor, não regressão de prompt). Setup e ajust
      de `contains` do CP08.
 - **Validação observada:** o Alerta 2 é quase idêntico ao 1º exemplo few-shot; confirmou-se
   que o modelo **adapta** (tenant wakanda-systems, 6%/8min) em vez de copiar o exemplo.
-- **Execução:** modelo **Gemini (Google), via Copilot CLI**; validado nos 3 alertas crus do
-  CP02, com os 5 rótulos, `@handle` válido e ≤ 8 linhas em todos.
+- **Execução:** validado nos 3 alertas crus do CP02, com os 5 rótulos, `@handle` válido e ≤ 8
+  linhas em todos.

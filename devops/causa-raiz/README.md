@@ -58,7 +58,7 @@ e `calibracao.yaml` + `calibracao/` (evidência da calibração).
 - **Rubrica (4 critérios, 0–2, total 0–8):** causa-raiz correta · correlação×causa · ação
   proporcional · honestidade epistêmica. **Gate:** aprova só se **total ≥ 6 E nenhum critério = 0**
   (um zero reprova mesmo com total ≥ 6).
-- **Juiz × gerador separados:** juiz = `google:gemini-2.5-flash`; gerador da análise no gate =
+- **Juiz × gerador separados:** juiz = `openai:chat:gpt-5.4-mini`; gerador da análise no gate =
   `groq:llama-3.3-70b-versatile` (evita autoavaliação).
 - **Calibração (contra duas saídas de referência já pontuadas à mão):**
   - `calibracao/rca-boa.md` (humano 2/2/2/2) → juiz **PASS**.

@@ -13,12 +13,10 @@ evaluateOptions:
   maxEvalTimeMs: 300000
 
 providers:
-  - id: google:gemini-2.5-flash    # disponível no free tier; thinkingBudget:0 desliga reasoning -> latência < 5s
+  - id: openai:chat:gpt-5.4-mini   # provider pago estável para o gate determinístico
     config:
       maxRetries: 1
-      generationConfig:
-        thinkingConfig:
-          thinkingBudget: 0
+      max_completion_tokens: 256
   - id: groq:llama-3.3-70b-versatile   # GROQ_API_KEY (free tier) — Meta/Llama na nuvem
     config:
       maxRetries: 1
@@ -79,7 +77,7 @@ tests:
       # limites operacionais (CP08)
       - type: latency
         threshold: 5000
-      # custo: o promptfoo só calcula para provedores com tabela de preço (Gemini); Groq retorna nulo
+      # custo: o promptfoo calcula para OpenAI; Groq pode retornar nulo
       # -> tolerante: valida <= US$ 0,01 quando há custo, passa quando o provedor não reporta
       - type: javascript
         value: "context.providerResponse?.cost == null || context.providerResponse.cost <= 0.01"
