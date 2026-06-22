@@ -23,5 +23,6 @@ devops/
 
 ## Prompts
 
+- [causa-raiz](./devops/causa-raiz/) — análise de causa-raiz cruzando config, métricas e logs.
 - [nota-de-triagem](./devops/nota-de-triagem/) — nota padronizada de alerta a partir de um alerta cru.
 - [triagem-de-pods](./devops/triagem-de-pods/) — triagem de pods Kubernetes a partir de um snapshot do cluster.
