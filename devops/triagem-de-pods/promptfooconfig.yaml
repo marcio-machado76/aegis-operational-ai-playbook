@@ -8,9 +8,9 @@ prompts:
 
 evaluateOptions:
   maxConcurrency: 1
-  delay: 1000
-  timeoutMs: 30000
-  maxEvalTimeMs: 180000
+  delay: 5000
+  timeoutMs: 90000
+  maxEvalTimeMs: 300000
 
 providers:
   - id: google:gemini-2.5-flash    # disponível no free tier; thinkingBudget:0 desliga reasoning -> latência < 5s
