@@ -7,12 +7,15 @@ documentado para reuso pelo time de engenharia.
 ## Escopo atual
 
 O repositório está sendo construído checkpoint a checkpoint a partir do desafio da Aegis.
-Neste momento, o playbook contém o primeiro prompt operacional da biblioteca.
+Neste momento, o playbook contém os primeiros prompts operacionais da biblioteca.
 
 ## Estrutura
 
 ```text
 devops/
+  nota-de-triagem/
+    prompt.md
+    README.md
   triagem-de-pods/
     prompt.md
     README.md
@@ -20,4 +23,5 @@ devops/
 
 ## Prompts
 
+- [nota-de-triagem](./devops/nota-de-triagem/) — nota padronizada de alerta a partir de um alerta cru.
 - [triagem-de-pods](./devops/triagem-de-pods/) — triagem de pods Kubernetes a partir de um snapshot do cluster.
