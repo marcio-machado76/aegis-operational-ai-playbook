@@ -16,7 +16,7 @@ providers:
   - id: openai:chat:gpt-5.4-mini   # provider pago estável para o gate determinístico
     config:
       maxRetries: 1
-      max_completion_tokens: 256
+      max_completion_tokens: 512
   - id: groq:llama-3.3-70b-versatile   # GROQ_API_KEY (free tier) — Meta/Llama na nuvem
     config:
       maxRetries: 1
