@@ -53,6 +53,12 @@ Execução (Haiku 4.5), encadeada:
 ## Limitações conhecidas
 <!-- TODO -->
 
+## Testes
+Prompt de **saída aberta**: não há resposta única verificável por regex, então não tem
+`promptfooconfig.yaml` determinístico (o CP08 cobre só os 3 prompts de saída estruturada).
+A avaliação é por **LLM-as-judge** — a camada montada no CP09 e estendida a todos os
+prompts no CP10.
+
 ## Curadoria (CP05)
 - **Técnica:** prompt chaining (encadeamento de prompts). A migração é grande demais para um
   prompt único — jogada de uma vez, a resposta sai rasa. Quebrá-la em diagnóstico → plano →
