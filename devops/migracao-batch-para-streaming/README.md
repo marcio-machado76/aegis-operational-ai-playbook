@@ -18,8 +18,7 @@ como entrada. Os elos vivem em [`prompts/`](./prompts):
 3. [`03-plano-executavel.md`](./prompts/03-plano-executavel.md) — detalha o plano executável e reversível. Entrada: saída do elo 2.
 
 > Desvio consciente da convenção "um prompt.md por pasta": como o CP05 é uma cadeia,
-> os elos ficam em `prompts/` numerados (mesmo padrão do exemplo `service-topology-mapper`
-> em `prompt-registry-extended`). O frontmatter da cadeia fica neste README.
+> os elos ficam em `prompts/` numerados. O frontmatter da cadeia fica neste README.
 
 ## Objetivo
 Migrar um pipeline de processamento em lote para orientado a eventos (streaming) sem

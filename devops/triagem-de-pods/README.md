@@ -64,7 +64,7 @@ E3 indica que não há pod problemático e não usa o marcador 🔴. Mais latên
 
 ## Curadoria (CP01)
 - **Técnica:** Chain-of-Thought interno (raciocínio passo a passo sem expor) + saída
-  estruturada por template. O raciocínio interno é o que leva à causa provável; o template
+  estruturada por formato. O raciocínio interno é o que leva à causa provável; a estrutura
   garante saída consistente e legível.
 - **Formato:** optou-se por **Markdown** em vez de JSON porque o consumidor desta saída é
   humano (o plantonista lendo no terminal durante o incidente) e porque o Markdown é mais
