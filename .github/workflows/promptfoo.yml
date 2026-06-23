@@ -12,66 +12,118 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write   # necessário para comentar o resultado no PR
+  issues: write   # necessário para comentar o resultado no PR via issues.createComment
+
+concurrency:
+  group: promptfoo-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   promptfoo:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       PROMPTFOO_VERSION: 0.121.17
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
 
-      # GATE — asserts determinísticos. `set -e` faz qualquer reprovação derrubar o build (a1).
+      - name: Validar secrets obrigatórios
+        run: |
+          set -euo pipefail
+          test -n "${OPENAI_API_KEY}" || { echo "Falta secret OPENAI_API_KEY"; exit 1; }
+
+      # GATE — asserts determinísticos. Para reduzir flakes, o build bloqueia só no provedor
+      # principal (OpenAI), mantendo a comparação com Claude em passo informativo separado.
       # Roda os três prompts de saída estruturada (b1: suíte inteira).
-      - name: Suite deterministica (barra o build)
+      - name: Suite deterministica OpenAI (barra o build)
         id: deterministic
         run: |
-          set -e
+          set -euo pipefail
           for cfg in \
             devops/triagem-de-pods/promptfooconfig.yaml \
             devops/nota-de-triagem/promptfooconfig.yaml \
             devops/networkpolicy-sentinel/promptfooconfig.yaml; do
             echo "::group::promptfoo eval $cfg"
-            # -j 1 (serial): evita disparar chamadas em rajada e estourar o RPM do free tier,
-            # o que inflaria a latência medida e reprovaria o assert de latência por throttling.
-            npx promptfoo@${PROMPTFOO_VERSION} eval -c "$cfg" --no-cache -j 1
+            # -j 1 (serial): reduz variação de latência e evita rajadas desnecessárias.
+            npx --yes promptfoo@${PROMPTFOO_VERSION} eval -c "$cfg" --no-cache -j 1 \
+              --filter-providers 'openai:'
             echo "::endgroup::"
           done
+
+      # COMPARAÇÃO — mesmo recorte determinístico, mas em Claude. Informativo para acompanhar
+      # portabilidade do playbook sem transformar indisponibilidade transitória do 2º provedor em
+      # falso vermelho de CI.
+      - name: Suite deterministica Claude (informativa)
+        id: claude_compare
+        if: env.ANTHROPIC_API_KEY != ''
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          failed=0
+          for cfg in \
+            devops/triagem-de-pods/promptfooconfig.yaml \
+            devops/nota-de-triagem/promptfooconfig.yaml \
+            devops/networkpolicy-sentinel/promptfooconfig.yaml; do
+            echo "::group::promptfoo eval $cfg (Claude)"
+            if ! npx --yes promptfoo@${PROMPTFOO_VERSION} eval -c "$cfg" --no-cache -j 1 \
+              --filter-providers 'anthropic:'; then
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "$failed"
 
       # INFORMATIVO — gate de qualidade por LLM-as-judge. continue-on-error: NÃO derruba o build
       # (a1). Serve de sinal de qualidade no PR sem reprovar por flutuação do juiz.
       - name: Gate de qualidade LLM-as-judge (informativo)
+        id: judge
+        if: env.ANTHROPIC_API_KEY != ''
         continue-on-error: true
         run: |
+          set -euo pipefail
+          failed=0
           for cfg in \
             devops/causa-raiz/promptfooconfig.yaml \
             devops/estrategia-de-backpressure/promptfooconfig.yaml \
             devops/migracao-batch-para-streaming/promptfooconfig.yaml; do
             echo "::group::juiz (informativo) $cfg"
-            npx promptfoo@${PROMPTFOO_VERSION} eval -c "$cfg" --no-cache -j 1 || true
+            if ! npx --yes promptfoo@${PROMPTFOO_VERSION} eval -c "$cfg" --no-cache -j 1; then
+              failed=1
+            fi
             echo "::endgroup::"
           done
+          exit "$failed"
 
       # Comenta o resultado direto no PR (mesmo se o gate falhar — always()).
       - name: Comentar resultado no PR
         if: github.event_name == 'pull_request' && always()
+        continue-on-error: true
         uses: actions/github-script@v7
         with:
           script: |
             const det = '${{ steps.deterministic.outcome }}';
+            const claude = '${{ steps.claude_compare.outcome }}';
+            const judge = '${{ steps.judge.outcome }}';
+            const fmt = (outcome, labels) => {
+              if (outcome === 'success') return labels.success;
+              if (outcome === 'failure') return labels.failure;
+              if (outcome === 'skipped' || !outcome) return labels.skipped;
+              return outcome;
+            };
             const body = [
               '### promptfoo — resultado da suíte',
               '',
-              `- **Gate determinístico (barra o build):** ${det === 'success' ? '✅ passou' : '❌ falhou'}`,
-              '- **Juiz LLM (informativo, não barra o build):** executado — ver resultado nos logs do job.',
+              `- **Gate determinístico OpenAI (barra o build):** ${fmt(det, { success: '✅ passou', failure: '❌ falhou', skipped: '⏭️ não executado' })}`,
+              `- **Comparação determinística Claude (informativa):** ${fmt(claude, { success: '✅ executada', failure: '⚠️ falhou', skipped: '⏭️ pulada (sem secret ANTHROPIC_API_KEY)' })}`,
+              `- **Juiz LLM (informativo):** ${fmt(judge, { success: '✅ executado', failure: '⚠️ falhou', skipped: '⏭️ pulado (sem secret ANTHROPIC_API_KEY)' })}`,
               '',
-              '_Determinístico:_ triagem-de-pods · nota-de-triagem · networkpolicy-sentinel.',
+              '_Determinístico bloqueante:_ triagem-de-pods · nota-de-triagem · networkpolicy-sentinel.',
+              '_Comparação informativa:_ mesma suíte em Claude Haiku.',
               '_Juiz (informativo):_ causa-raiz · estrategia-de-backpressure · migracao-batch-para-streaming.',
             ].join('\n');
             await github.rest.issues.createComment({

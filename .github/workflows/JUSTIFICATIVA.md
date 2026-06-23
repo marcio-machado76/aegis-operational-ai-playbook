@@ -8,15 +8,18 @@ o que se ganha e o que se perde, e por que a escolhida.
 
 | Alternativa | Ganha | Perde |
 |---|---|---|
-| **(escolhida) Só asserts determinísticos barram; juiz LLM é informativo** | Gate reproduzível e confiável; um PR bom nunca é reprovado por flutuação do juiz | Uma regressão de qualidade que *só* o juiz pegaria não bloqueia o merge sozinha |
+| **(escolhida) Só o recorte determinístico em OpenAI barra; Claude e juiz LLM são informativos** | Gate reproduzível e confiável; um PR bom nunca é reprovado por flutuação do juiz nem indisponibilidade transitória do 2º provedor | Uma divergência que apareça só em Claude ou só no juiz não bloqueia o merge sozinha |
 | Juiz também barra (com threshold) | Pega regressão de qualidade automaticamente | Juiz é não-determinístico — pode reprovar um build por azar (falso vermelho), corroendo a confiança no CI |
 
 **Por quê:** o gate precisa ser determinístico para ser confiável. O juiz (CP09) flutua entre
-execuções; usá-lo como bloqueio transforma ruído em build vermelho. Então ele **roda e aparece
-no comentário do PR** (sinal de qualidade visível ao revisor), mas quem **barra** é o assert
-determinístico. A regressão de qualidade fica coberta pela combinação *comentário do juiz +
-revisão humana*. Se um dia quisermos o juiz barrando, o caminho é dar **margem** (ex.: corte em
-5/8 em vez de 6/8) e **retentativas** para absorver a flutuação — registrado, mas não adotado agora.
+execuções; usá-lo como bloqueio transforma ruído em build vermelho. E a experiência desta entrega
+mostrou outro risco: um **2º provedor bloqueante** pode falhar por timeout ou indisponibilidade
+transitória mesmo quando o prompt está correto. Então o workflow separa três camadas:
+**(1)** OpenAI como gate determinístico bloqueante; **(2)** Claude Haiku como comparação
+informativa da mesma suíte estruturada; **(3)** juiz LLM como sinal de qualidade em saída aberta.
+A regressão de qualidade fica coberta pela combinação *comentário do juiz + comparação em Claude +
+revisão humana*. Se um dia quisermos Claude ou o juiz barrando, o caminho é dar **margem** e
+**retentativas** específicas — registrado, mas não adotado agora.
 
 ## 2. Suíte inteira ou só os prompts alterados?
 
@@ -35,8 +38,8 @@ inverte (economia vs risco de cobertura).
 | Decisão | Escolha | Alternativas consideradas |
 |---|---|---|
 | **Gatilho** | `pull_request` + `workflow_dispatch` | Adicionar `push: main` (re-roda após merge — redundante se o PR já barrou, mas pega push direto); `schedule` noturno (pega *drift* de provedor) — descartados por ora para não gastar à toa |
-| **Chaves** | GitHub **Secrets** do repo (`OPENAI_API_KEY`, `GROQ_API_KEY`) | Hardcode no YAML (**nunca** — vazamento); OIDC/cofre externo (exagero para este porte de projeto) |
-| **Custo por PR** | Modelos baratos (OpenAI mini + Groq) → custo baixo e previsível; rodar só em PR (não em todo push) já corta execuções | Rodar em todo push dobraria o custo sem ganho real (o PR é onde a regressão é barrada antes do merge) |
+| **Chaves** | GitHub **Secrets** do repo (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`) | Hardcode no YAML (**nunca** — vazamento); OIDC/cofre externo (exagero para este porte de projeto) |
+| **Custo por PR** | Modelos baratos (OpenAI mini + Claude Haiku) → custo baixo e previsível; só OpenAI barra, Claude roda como comparação e não transforma custo extra em risco extra de merge | Rodar em todo push dobraria o custo sem ganho real (o PR é onde a regressão é barrada antes do merge) |
 
 O `workflow_dispatch` foi adicionado para rodar a suíte **manualmente** (re-checar após um erro
 transitório, validar sem abrir PR) — custo zero, conveniência alta.
@@ -52,34 +55,37 @@ transitório, validar sem abrir PR) — custo zero, conveniência alta.
 action oficial, no modelo "falha em qualquer assert", não permite. Por isso o workflow explícito.
 O comentário no PR é feito via `actions/github-script` (sem depender da action).
 
-## 5. Erros transitórios de provedor (503/429)
+## 5. Erros transitórios de provedor (503/429/timeout)
 
-Risco real, já observado no CP08: uma chamada pode falhar por **alta demanda (503)** ou **rate
-limit (429)** — não é regressão do prompt, mas derrubaria o gate determinístico (falso vermelho).
+Risco real, já observado no CP08: uma chamada pode falhar por **alta demanda (503)**, **rate
+limit (429)** ou **timeout/indisponibilidade do provedor** — não é regressão do prompt, mas
+derrubaria o gate determinístico (falso vermelho).
 
 | Mitigação | Decisão |
 |---|---|
 | Retentativas embutidas do promptfoo (backoff em 429/5xx) | **Adotada** (baseline — o promptfoo já reexecuta) |
+| Separar provedor bloqueante de provedor comparativo | **Adotada** (OpenAI barra; Claude compara sem bloquear) |
 | Re-rodar via `workflow_dispatch` quando um flake derrubar o build | **Adotada** (botão manual já existe) |
 | Envolver o job num "retry-action" agressivo | **Descartada** — re-tentar demais mascara falha real e gasta tokens |
 
 A distinção *regressão × flake transitório* é parte do desenho: o gate confia nas retentativas
-do promptfoo e, no limite, no re-run manual — sem retry agressivo que esconda regressão de verdade.
+do promptfoo, limita o bloqueio a um provedor estável e, no limite, no re-run manual — sem retry
+agressivo que esconda regressão de verdade.
 
-**Caso real observado:** em runs com Gemini no free tier, o conteúdo saía correto, mas chamadas
-sequenciais demais provocavam throttling/backoff, 429 e timeout — falsos vermelhos num gate
-bloqueante. A mitigação final foi dupla: rodar o eval **serial (`-j 1`)** com espaçamento entre
-chamadas e substituir o provedor bloqueante por OpenAI, deixando fora do caminho crítico a
-instabilidade do free tier. A intenção não é aceitar prompt lento; é impedir que limitações do
-provedor sejam confundidas com regressão de conteúdo.
+**Casos reais observados:** em runs com Gemini no free tier, o conteúdo saía correto, mas
+chamadas sequenciais demais provocavam throttling/backoff, 429 e timeout; depois, o Groq também
+gerou timeout/`Queue disposed` mesmo com o conteúdo correto em OpenAI. A mitigação final foi
+tripla: rodar o eval **serial (`-j 1`)** com espaçamento entre chamadas, substituir o provedor
+bloqueante por OpenAI e rebaixar o 2º provedor para comparação informativa. A intenção não é
+aceitar prompt lento; é impedir que limitações do provedor sejam confundidas com regressão de conteúdo.
 
 ## Cobertura de testes da biblioteca
 
 | Prompt | Tipo de teste | No gate? |
 |---|---|---|
-| triagem-de-pods | determinístico (CP08) | **barra** |
-| nota-de-triagem | determinístico (CP08) | **barra** |
-| networkpolicy-sentinel | determinístico (CP08) | **barra** |
+| triagem-de-pods | determinístico (CP08) | **barra em OpenAI / compara em Claude** |
+| nota-de-triagem | determinístico (CP08) | **barra em OpenAI / compara em Claude** |
+| networkpolicy-sentinel | determinístico (CP08) | **barra em OpenAI / compara em Claude** |
 | causa-raiz | LLM-as-judge (CP09) | informativo |
 | estrategia-de-backpressure | LLM-as-judge (padrão CP09), `promptfooconfig.yaml` próprio | informativo |
 | migracao-batch-para-streaming | LLM-as-judge no elo 1 (diagnóstico) da cadeia, `promptfooconfig.yaml` próprio | informativo |

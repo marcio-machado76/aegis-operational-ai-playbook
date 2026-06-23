@@ -35,26 +35,27 @@ Entram aqui prompts relacionados a:
 Os prompts de saída estruturada têm um `promptfooconfig.yaml` ao lado do `prompt.md`
 (o teste viaja junto com o prompt). Rodados com `npx promptfoo@latest eval --no-cache`.
 
-- **Provedores no gate determinístico:** `openai:chat:gpt-5.4-mini` +
-  `groq:llama-3.3-70b-versatile` (Meta/Llama na nuvem).
+- **Provedor bloqueante no CI:** `openai:chat:gpt-5.4-mini`.
+- **Comparação informativa no CI:** `anthropic:messages:claude-haiku-4-5-20251001`.
 - **Limites operacionais em todos:** latência ≤ 5s e custo ≤ US$ 0,01.
 
 **Ajustes feitos durante o CP08 (o caminho, não só o destino):**
-1. **Ollama (local) → Groq.** Comecei com Llama local (Ollama) pela privacidade e custo zero;
-   na máquina disponível a inferência ficou lenta/instável demais para o orçamento de 5s.
-   Troquei por Groq (mesma família Meta/Llama, na nuvem) — o trade-off privacidade-local ×
-   confiabilidade-nuvem na prática.
+1. **Ollama/experimentos iniciais → Claude API.** As primeiras iterações testaram Llama local,
+   mas o caminho final do CI migrou para Claude Haiku por previsibilidade maior de execução.
 2. **Gemini free tier → OpenAI.** O gate chegou a usar Gemini 2.5 Flash, mas a combinação de
    rate limit 429 e backoff do free tier gerou flakes demais para CI bloqueante. O provider
-   determinístico foi trocado para OpenAI, mantendo Groq como segundo provedor de comparação.
-3. **Assert de custo tolerante.** O `type: cost` nativo do promptfoo dá erro em provedores sem
-   tabela de preço (Groq, e modelo local). Reescrevi como `javascript` que valida ≤ US$ 0,01
-   quando há custo (OpenAI) e passa quando o provedor não reporta.
+   determinístico foi trocado para OpenAI, mantendo Claude como segundo provedor de comparação.
+3. **Segundo provedor sem bloquear merge.** Depois da migração, ficou claro que qualquer 2º
+   provedor no caminho crítico do CI reintroduziria falso vermelho por timeout/indisponibilidade.
+   A solução final foi: OpenAI barra; Claude compara sem bloquear.
+4. **Assert de custo tolerante.** O `type: cost` nativo do promptfoo pode falhar quando o
+   provedor não reporta preço. Reescrevi como `javascript` que valida ≤ US$ 0,01 quando há custo
+   e passa quando o provedor não reporta.
 
 **Resultados (`promptfoo eval`):**
 
-| Config | Casos × provedores | Resultado |
+| Config | Casos × providers no config | Papel no CI |
 |--------|--------------------|-----------|
-| triagem-de-pods | 3 × 2 | **6 passed / 0 failed** |
-| networkpolicy-sentinel | 1 × 2 | **2 passed / 0 failed** |
-| nota-de-triagem | 3 × 2 | **5 passed / 0 failed / 1 erro 503 transitório** |
+| triagem-de-pods | 3 × 2 | OpenAI **bloqueante** · Claude **comparativo** |
+| networkpolicy-sentinel | 1 × 2 | OpenAI **bloqueante** · Claude **comparativo** |
+| nota-de-triagem | 3 × 2 | OpenAI **bloqueante** · Claude **comparativo** |

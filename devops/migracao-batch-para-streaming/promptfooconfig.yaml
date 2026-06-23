@@ -1,6 +1,6 @@
 # CP10 — teste informativo (LLM-as-judge) da cadeia de migração (saída aberta).
 # INFORMATIVO: não barra o build (decisão a1). Como a cadeia tem 3 elos, este teste avalia o
-# ELO 1 (diagnóstico) como representativo — a porta de entrada da cadeia. Juiz: OpenAI; gerador: Groq.
+# ELO 1 (diagnóstico) como representativo — a porta de entrada da cadeia. Juiz: OpenAI; gerador: Claude Haiku.
 # Exec: a partir desta pasta, `npx promptfoo@latest eval --no-cache`.
 description: "CP10 juiz informativo — migração batch→streaming (elo 1: diagnóstico)"
 
@@ -14,9 +14,10 @@ evaluateOptions:
   maxEvalTimeMs: 120000
 
 providers:
-  - id: groq:llama-3.3-70b-versatile     # gerador (independente do juiz)
+  - id: anthropic:messages:claude-haiku-4-5-20251001     # gerador (independente do juiz)
     config:
       maxRetries: 1
+      max_tokens: 1024
 
 tests:
   - description: Estado atual do Forge (CP05)

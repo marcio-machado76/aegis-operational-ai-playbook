@@ -17,9 +17,10 @@ providers:
     config:
       maxRetries: 1
       max_completion_tokens: 1024
-  - id: groq:llama-3.3-70b-versatile   # GROQ_API_KEY (free tier) — Meta/Llama na nuvem
+  - id: anthropic:messages:claude-haiku-4-5-20251001   # ANTHROPIC_API_KEY
     config:
       maxRetries: 1
+      max_tokens: 1024
 
 tests:
   - description: Manifesto permissivo do sentinel-prod -> versão endurecida
@@ -77,7 +78,7 @@ tests:
       # limites operacionais (CP08)
       - type: latency
         threshold: 5000
-      # custo: o promptfoo calcula para OpenAI; Groq pode retornar nulo
+      # custo: o promptfoo calcula para OpenAI/Anthropic quando disponível
       # -> tolerante: valida <= US$ 0,01 quando há custo, passa quando o provedor não reporta
       - type: javascript
         value: "context.providerResponse?.cost == null || context.providerResponse.cost <= 0.01"

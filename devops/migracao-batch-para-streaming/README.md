@@ -50,13 +50,18 @@ Execução (Haiku 4.5), encadeada:
 (Saídas completas de cada elo registradas na entrega do desafio.)
 
 ## Limitações conhecidas
-<!-- TODO -->
+- O `promptfooconfig.yaml` avalia apenas o **elo 1 (diagnóstico)** da cadeia como amostra
+  representativa; os elos 2 e 3 continuam dependentes de revisão humana da saída completa.
+- A cadeia assume que a equipe vai substituir os placeholders operacionais (stack, feature flag,
+  comandos e números ilustrativos) pelos equivalentes do ambiente real antes de executar o runbook.
+- Como a saída é aberta e multi-etapa, a avaliação automática é **informativa**: sinaliza qualidade,
+  mas não substitui a leitura humana do plano e do runbook.
 
 ## Testes
-Prompt de **saída aberta**: não há resposta única verificável por regex, então não tem
-`promptfooconfig.yaml` determinístico (o CP08 cobre só os 3 prompts de saída estruturada).
-A avaliação é por **LLM-as-judge** — a camada montada no CP09 e estendida a todos os
-prompts no CP10.
+Prompt de **saída aberta**: não há resposta única verificável por regex, então não entra no gate
+determinístico do CP08. A pasta tem `promptfooconfig.yaml` próprio com avaliação por
+**LLM-as-judge**; no CP10 esse teste roda como passo **informativo** do workflow, avaliando o
+**elo 1 (diagnóstico)** como porta de entrada representativa da cadeia.
 
 ## Curadoria (CP05)
 - **Técnica:** prompt chaining (encadeamento de prompts). A migração é grande demais para um

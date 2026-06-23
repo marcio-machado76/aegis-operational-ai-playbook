@@ -1,6 +1,6 @@
 # CP09 — gate de qualidade do prompt de causa-raiz (LLM-as-judge).
 # Roda o prompt contra os artefatos do Cerebro (CP03) e o juiz pontua a saída pela rubrica.
-# Gerador: Groq/Llama 3.3 (independente do juiz). Juiz: OpenAI GPT-5.4 mini.
+# Gerador: Claude Haiku (independente do juiz). Juiz: OpenAI GPT-5.4 mini.
 # Gate: aprova só se TOTAL >= 6 E nenhum critério = 0 (a rubrica abaixo decide o pass/fail).
 # Exec: a partir desta pasta, `npx promptfoo@latest eval --no-cache`.
 # Calibração do juiz documentada em calibracao.yaml (saídas de referência boa/ruim).
@@ -16,9 +16,10 @@ evaluateOptions:
   maxEvalTimeMs: 120000
 
 providers:
-  - id: groq:llama-3.3-70b-versatile     # gerador da análise (independente do juiz)
+  - id: anthropic:messages:claude-haiku-4-5-20251001     # gerador da análise (independente do juiz)
     config:
       maxRetries: 1
+      max_tokens: 1024
 
 tests:
   - description: Artefatos do Cerebro (CP03) — config + métricas + logs sanitizados

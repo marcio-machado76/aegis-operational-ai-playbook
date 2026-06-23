@@ -1,6 +1,6 @@
 # CP10 — teste informativo (LLM-as-judge) do prompt de backpressure (saída aberta).
 # INFORMATIVO: não barra o build (decisão a1); é sinal de qualidade no PR.
-# Padrão de juiz idêntico ao CP09 (causa-raiz). Juiz: OpenAI GPT-5.4 mini; gerador: Groq/Llama.
+# Padrão de juiz idêntico ao CP09 (causa-raiz). Juiz: OpenAI GPT-5.4 mini; gerador: Claude Haiku.
 # Exec: a partir desta pasta, `npx promptfoo@latest eval --no-cache`.
 description: CP10 juiz informativo — estratégia de backpressure
 
@@ -14,9 +14,10 @@ evaluateOptions:
   maxEvalTimeMs: 120000
 
 providers:
-  - id: groq:llama-3.3-70b-versatile     # gerador (independente do juiz)
+  - id: anthropic:messages:claude-haiku-4-5-20251001     # gerador (independente do juiz)
     config:
       maxRetries: 1
+      max_tokens: 1024
 
 tests:
   - description: Cenário do Relay (CP04)

@@ -26,6 +26,21 @@ biblioteca:
   (CP05), então usa uma subpasta `prompts/` com os elos numerados, em vez de um único
   `prompt.md`. O frontmatter da cadeia fica no `README.md` da pasta.
 
+## Mapeamento da entrega ao desafio
+
+| Checkpoint | Evidência no repositório |
+|---|---|
+| **CP01** | [`devops/triagem-de-pods/`](./devops/triagem-de-pods/) — prompt parametrizável + README + testes determinísticos |
+| **CP02** | [`devops/nota-de-triagem/`](./devops/nota-de-triagem/) — prompt parametrizável + README + testes determinísticos |
+| **CP03** | [`devops/causa-raiz/`](./devops/causa-raiz/) — prompt de saída aberta + gate LLM-as-judge + calibração |
+| **CP04** | [`devops/estrategia-de-backpressure/`](./devops/estrategia-de-backpressure/) — comparação de estratégias com avaliação informativa |
+| **CP05** | [`devops/migracao-batch-para-streaming/`](./devops/migracao-batch-para-streaming/) — cadeia diagnóstico → plano → runbook |
+| **CP06** | [`devops/networkpolicy-sentinel/`](./devops/networkpolicy-sentinel/) — endurecimento de manifesto com saída em YAML |
+| **CP07** | Estrutura da biblioteca descrita neste README e no índice de [`devops/`](./devops/) |
+| **CP08** | `promptfooconfig.yaml` acoplados aos prompts de saída estruturada |
+| **CP09** | Rubrica calibrada em [`devops/causa-raiz/calibracao.yaml`](./devops/causa-raiz/calibracao.yaml) |
+| **CP10** | Pipeline em [`.github/workflows/promptfoo.yml`](./.github/workflows/promptfoo.yml) + justificativa em [`.github/workflows/JUSTIFICATIVA.md`](./.github/workflows/JUSTIFICATIVA.md) |
+
 ## Estrutura e convenções
 
 ```
@@ -73,8 +88,9 @@ O playbook é testado, não só guardado:
 - **LLM-as-judge (CP09):** `causa-raiz` (saída aberta) tem um gate de qualidade por juiz LLM,
   calibrado contra pontuação humana (ver `devops/causa-raiz/`).
 - **Pipeline (CP10):** [`.github/workflows/promptfoo.yml`](./.github/workflows/promptfoo.yml)
-  roda a suíte a cada pull request — os asserts determinísticos barram o build, o juiz LLM é
-  informativo. A justificativa do desenho do gate está em
+  roda a suíte a cada pull request — o recorte determinístico em **OpenAI** barra o build;
+  **Claude** roda como comparação informativa da mesma suíte; o juiz LLM também é informativo
+  para as saídas abertas. A justificativa do desenho do gate está em
   [`.github/workflows/JUSTIFICATIVA.md`](./.github/workflows/JUSTIFICATIVA.md).
 
 ## Como usar
