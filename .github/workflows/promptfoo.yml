@@ -27,8 +27,8 @@ jobs:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: '24'
 
@@ -37,9 +37,8 @@ jobs:
           set -euo pipefail
           test -n "${OPENAI_API_KEY}" || { echo "Falta secret OPENAI_API_KEY"; exit 1; }
 
-      # GATE — asserts determinísticos. Para reduzir flakes, o build bloqueia só no provedor
-      # principal (OpenAI), mantendo a comparação com Claude em passo informativo separado.
-      # Roda os três prompts de saída estruturada (b1: suíte inteira).
+      # GATE — asserts determinísticos. Para aderir ao CP08 sem introduzir falso vermelho por
+      # variação de provedor, o build bloqueia só no recorte OpenAI da suíte estruturada.
       - name: Suite deterministica OpenAI (barra o build)
         id: deterministic
         run: |
@@ -54,29 +53,6 @@ jobs:
               --filter-providers 'openai:'
             echo "::endgroup::"
           done
-
-      # COMPARAÇÃO — mesmo recorte determinístico, mas em Claude. Informativo para acompanhar
-      # portabilidade do playbook sem transformar indisponibilidade transitória do 2º provedor em
-      # falso vermelho de CI.
-      - name: Suite deterministica Claude (informativa)
-        id: claude_compare
-        if: env.ANTHROPIC_API_KEY != ''
-        continue-on-error: true
-        run: |
-          set -euo pipefail
-          failed=0
-          for cfg in \
-            devops/triagem-de-pods/promptfooconfig.yaml \
-            devops/nota-de-triagem/promptfooconfig.yaml \
-            devops/networkpolicy-sentinel/promptfooconfig.yaml; do
-            echo "::group::promptfoo eval $cfg (Claude)"
-            if ! npx --yes promptfoo@${PROMPTFOO_VERSION} eval -c "$cfg" --no-cache -j 1 \
-              --filter-providers 'anthropic:'; then
-              failed=1
-            fi
-            echo "::endgroup::"
-          done
-          exit "$failed"
 
       # INFORMATIVO — gate de qualidade por LLM-as-judge. continue-on-error: NÃO derruba o build
       # (a1). Serve de sinal de qualidade no PR sem reprovar por flutuação do juiz.
@@ -103,11 +79,10 @@ jobs:
       - name: Comentar resultado no PR
         if: github.event_name == 'pull_request' && always()
         continue-on-error: true
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const det = '${{ steps.deterministic.outcome }}';
-            const claude = '${{ steps.claude_compare.outcome }}';
             const judge = '${{ steps.judge.outcome }}';
             const fmt = (outcome, labels) => {
               if (outcome === 'success') return labels.success;
@@ -119,11 +94,9 @@ jobs:
               '### promptfoo — resultado da suíte',
               '',
               `- **Gate determinístico OpenAI (barra o build):** ${fmt(det, { success: '✅ passou', failure: '❌ falhou', skipped: '⏭️ não executado' })}`,
-              `- **Comparação determinística Claude (informativa):** ${fmt(claude, { success: '✅ executada', failure: '⚠️ falhou', skipped: '⏭️ pulada (sem secret ANTHROPIC_API_KEY)' })}`,
               `- **Juiz LLM (informativo):** ${fmt(judge, { success: '✅ executado', failure: '⚠️ falhou', skipped: '⏭️ pulado (sem secret ANTHROPIC_API_KEY)' })}`,
               '',
               '_Determinístico bloqueante:_ triagem-de-pods · nota-de-triagem · networkpolicy-sentinel.',
-              '_Comparação informativa:_ mesma suíte em Claude Haiku.',
               '_Juiz (informativo):_ causa-raiz · estrategia-de-backpressure · migracao-batch-para-streaming.',
             ].join('\n');
             await github.rest.issues.createComment({

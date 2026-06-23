@@ -8,18 +8,19 @@ o que se ganha e o que se perde, e por que a escolhida.
 
 | Alternativa | Ganha | Perde |
 |---|---|---|
-| **(escolhida) Só o recorte determinístico em OpenAI barra; Claude e juiz LLM são informativos** | Gate reproduzível e confiável; um PR bom nunca é reprovado por flutuação do juiz nem indisponibilidade transitória do 2º provedor | Uma divergência que apareça só em Claude ou só no juiz não bloqueia o merge sozinha |
+| **(escolhida) Só o recorte determinístico em OpenAI barra; juiz LLM é informativo** | Gate reproduzível e confiável; um PR bom nunca é reprovado por flutuação do juiz nem por variação de latência de um 2º provedor | Uma divergência que só apareça em outro provedor ou só no juiz não bloqueia o merge sozinha |
 | Juiz também barra (com threshold) | Pega regressão de qualidade automaticamente | Juiz é não-determinístico — pode reprovar um build por azar (falso vermelho), corroendo a confiança no CI |
 
 **Por quê:** o gate precisa ser determinístico para ser confiável. O juiz (CP09) flutua entre
 execuções; usá-lo como bloqueio transforma ruído em build vermelho. E a experiência desta entrega
-mostrou outro risco: um **2º provedor bloqueante** pode falhar por timeout ou indisponibilidade
-transitória mesmo quando o prompt está correto. Então o workflow separa três camadas:
-**(1)** OpenAI como gate determinístico bloqueante; **(2)** Claude Haiku como comparação
-informativa da mesma suíte estruturada; **(3)** juiz LLM como sinal de qualidade em saída aberta.
-A regressão de qualidade fica coberta pela combinação *comentário do juiz + comparação em Claude +
-revisão humana*. Se um dia quisermos Claude ou o juiz barrando, o caminho é dar **margem** e
-**retentativas** específicas — registrado, mas não adotado agora.
+mostrou outro risco: um **2º provedor no mesmo gate determinístico** pode falhar por latência ou
+indisponibilidade transitória mesmo quando o prompt está correto. Então o workflow separa duas
+camadas: **(1)** OpenAI como gate determinístico bloqueante para os prompts estruturados do CP08;
+**(2)** juiz LLM como sinal de qualidade em saída aberta. O uso do 2º provedor exigido pelo
+desafio continua atendido fora desse recorte: Anthropic gera as saídas abertas avaliadas no CP09/CP10.
+Assim, a regressão de qualidade fica coberta pela combinação *gate determinístico + comentário do juiz +
+revisão humana*. Se um dia quisermos outro provedor ou o juiz barrando, o caminho é dar **margem**
+e **retentativas** específicas — registrado, mas não adotado agora.
 
 ## 2. Suíte inteira ou só os prompts alterados?
 
@@ -39,7 +40,7 @@ inverte (economia vs risco de cobertura).
 |---|---|---|
 | **Gatilho** | `pull_request` + `workflow_dispatch` | Adicionar `push: main` (re-roda após merge — redundante se o PR já barrou, mas pega push direto); `schedule` noturno (pega *drift* de provedor) — descartados por ora para não gastar à toa |
 | **Chaves** | GitHub **Secrets** do repo (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`) | Hardcode no YAML (**nunca** — vazamento); OIDC/cofre externo (exagero para este porte de projeto) |
-| **Custo por PR** | Modelos baratos (OpenAI mini + Claude Haiku) → custo baixo e previsível; só OpenAI barra, Claude roda como comparação e não transforma custo extra em risco extra de merge | Rodar em todo push dobraria o custo sem ganho real (o PR é onde a regressão é barrada antes do merge) |
+| **Custo por PR** | Modelos baratos (OpenAI mini + Claude Haiku) → custo baixo e previsível; só OpenAI entra no gate determinístico e Anthropic fica restrito às saídas abertas | Rodar em todo push dobraria o custo sem ganho real (o PR é onde a regressão é barrada antes do merge) |
 
 O `workflow_dispatch` foi adicionado para rodar a suíte **manualmente** (re-checar após um erro
 transitório, validar sem abrir PR) — custo zero, conveniência alta.
@@ -64,7 +65,7 @@ derrubaria o gate determinístico (falso vermelho).
 | Mitigação | Decisão |
 |---|---|
 | Retentativas embutidas do promptfoo (backoff em 429/5xx) | **Adotada** (baseline — o promptfoo já reexecuta) |
-| Separar provedor bloqueante de provedor comparativo | **Adotada** (OpenAI barra; Claude compara sem bloquear) |
+| Limitar o gate determinístico a um único provedor estável | **Adotada** (OpenAI barra; Anthropic fica fora do caminho crítico do CP08) |
 | Re-rodar via `workflow_dispatch` quando um flake derrubar o build | **Adotada** (botão manual já existe) |
 | Envolver o job num "retry-action" agressivo | **Descartada** — re-tentar demais mascara falha real e gasta tokens |
 
@@ -73,19 +74,20 @@ do promptfoo, limita o bloqueio a um provedor estável e, no limite, no re-run m
 agressivo que esconda regressão de verdade.
 
 **Casos reais observados:** em runs com Gemini no free tier, o conteúdo saía correto, mas
-chamadas sequenciais demais provocavam throttling/backoff, 429 e timeout; depois, o Groq também
-gerou timeout/`Queue disposed` mesmo com o conteúdo correto em OpenAI. A mitigação final foi
-tripla: rodar o eval **serial (`-j 1`)** com espaçamento entre chamadas, substituir o provedor
-bloqueante por OpenAI e rebaixar o 2º provedor para comparação informativa. A intenção não é
-aceitar prompt lento; é impedir que limitações do provedor sejam confundidas com regressão de conteúdo.
+chamadas sequenciais demais provocavam throttling/backoff, 429 e timeout; depois, Groq e
+Anthropic também mostraram que um 2º provedor no recorte determinístico podia estourar o teto
+de latência do CP08 sem regressão de conteúdo. A mitigação final foi tripla: rodar o eval
+**serial (`-j 1`)**, substituir o provedor bloqueante por OpenAI e tirar o 2º provedor do
+caminho crítico do gate estruturado. A intenção não é aceitar prompt lento; é impedir que
+limitações de provedor sejam confundidas com regressão de conteúdo.
 
 ## Cobertura de testes da biblioteca
 
 | Prompt | Tipo de teste | No gate? |
 |---|---|---|
-| triagem-de-pods | determinístico (CP08) | **barra em OpenAI / compara em Claude** |
-| nota-de-triagem | determinístico (CP08) | **barra em OpenAI / compara em Claude** |
-| networkpolicy-sentinel | determinístico (CP08) | **barra em OpenAI / compara em Claude** |
+| triagem-de-pods | determinístico (CP08) | **barra em OpenAI** |
+| nota-de-triagem | determinístico (CP08) | **barra em OpenAI** |
+| networkpolicy-sentinel | determinístico (CP08) | **barra em OpenAI** |
 | causa-raiz | LLM-as-judge (CP09) | informativo |
 | estrategia-de-backpressure | LLM-as-judge (padrão CP09), `promptfooconfig.yaml` próprio | informativo |
 | migracao-batch-para-streaming | LLM-as-judge no elo 1 (diagnóstico) da cadeia, `promptfooconfig.yaml` próprio | informativo |

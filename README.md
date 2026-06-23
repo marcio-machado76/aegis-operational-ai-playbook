@@ -88,9 +88,10 @@ O playbook é testado, não só guardado:
 - **LLM-as-judge (CP09):** `causa-raiz` (saída aberta) tem um gate de qualidade por juiz LLM,
   calibrado contra pontuação humana (ver `devops/causa-raiz/`).
 - **Pipeline (CP10):** [`.github/workflows/promptfoo.yml`](./.github/workflows/promptfoo.yml)
-  roda a suíte a cada pull request — o recorte determinístico em **OpenAI** barra o build;
-  **Claude** roda como comparação informativa da mesma suíte; o juiz LLM também é informativo
-  para as saídas abertas. A justificativa do desenho do gate está em
+  roda a suíte a cada pull request — o recorte determinístico em **OpenAI** barra o build, e o
+  juiz LLM roda como camada informativa para as saídas abertas. O requisito de usar ao menos dois
+  provedores ao longo do desafio é atendido pelo uso de **Anthropic** nos prompts abertos
+  avaliados nos CP09/CP10. A justificativa do desenho do gate está em
   [`.github/workflows/JUSTIFICATIVA.md`](./.github/workflows/JUSTIFICATIVA.md).
 
 ## Como usar

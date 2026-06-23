@@ -79,8 +79,8 @@ O valor deste item está no ciclo dirigido — não na primeira saída.
 
 ## Testes (CP08)
 `promptfooconfig.yaml` nesta pasta, cobrindo o manifesto permissivo + regras + mapa do CP06
-em 2 provedores (OpenAI GPT-5.4 mini + Claude Haiku 4.5). No workflow, o recorte OpenAI é o gate
-bloqueante e Claude roda como comparação informativa. Asserts na NetworkPolicy gerada:
+em 2 provedores (OpenAI GPT-5.4 mini + Claude Haiku 4.5). No workflow principal, o recorte
+OpenAI é o gate bloqueante do CP08. Asserts na NetworkPolicy gerada:
 `kind: NetworkPolicy` com `Ingress` e `Egress`, sem allow-all (`- {}`), egress libera Forge (5432)
 e Cerebro (9200), ingress libera `app: relay`, toda regra com comentário (`#`), latência ≤ 5s e
 custo ≤ US$ 0,01. Setup e ajustes comuns: ver o

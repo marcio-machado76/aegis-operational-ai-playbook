@@ -56,8 +56,8 @@ que está atualmente Running.
 
 ## Testes (CP08)
 `promptfooconfig.yaml` nesta pasta, cobrindo os 3 snapshots do CP01 em 2 provedores
-(OpenAI GPT-5.4 mini + Claude Haiku 4.5). No workflow, o recorte OpenAI é o gate bloqueante e
-Claude roda como comparação informativa. Asserts por entrada: E1 cita `sentinel-api-7d9c8b6f4-h4m2t`
+(OpenAI GPT-5.4 mini + Claude Haiku 4.5). No workflow principal, o recorte OpenAI é o gate
+bloqueante do CP08. Asserts por entrada: E1 cita `sentinel-api-7d9c8b6f4-h4m2t`
 + causa (OOMKilled/memória); E2 cita os 2 pods + causas (2.9.2/ImagePullBackOff e Insufficient/cpu);
 E3 indica que não há pod problemático e não usa o marcador 🔴. Mais latência ≤ 5s e custo ≤ US$ 0,01.
 Setup e ajustes comuns: ver o

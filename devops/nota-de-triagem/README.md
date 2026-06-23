@@ -43,8 +43,8 @@ ESCALAR PARA: @relay-core se a rejeição não cair em 10min
 
 ## Testes (CP08)
 `promptfooconfig.yaml` nesta pasta, cobrindo os 3 alertas crus do CP02 em 2 provedores
-(OpenAI GPT-5.4 mini + Claude Haiku 4.5). No workflow, o recorte OpenAI é o gate bloqueante e
-Claude roda como comparação informativa. Asserts: contém os 5 rótulos (ALERTA / IMPACTO / HIPÓTESE
+(OpenAI GPT-5.4 mini + Claude Haiku 4.5). No workflow principal, o recorte OpenAI é o gate
+bloqueante do CP08. Asserts: contém os 5 rótulos (ALERTA / IMPACTO / HIPÓTESE
 INICIAL / AÇÃO IMEDIATA / ESCALAR PARA), regex `ESCALAR PARA:.*@\w+`, ≤ 8 linhas, latência ≤ 5s,
 custo ≤ US$ 0,01. Setup e ajustes comuns: ver o
 [README da categoria](../README.md) (seção *Testes (CP08)*).
