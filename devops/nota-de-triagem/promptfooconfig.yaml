@@ -26,7 +26,7 @@ providers:
 defaultTest:
   assert:
     - type: contains
-      value: "ALERTA_INEXISTENTE:"
+      value: "ALERTA:"
     - type: contains
       value: "IMPACTO:"
     - type: contains
