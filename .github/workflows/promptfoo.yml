@@ -7,6 +7,7 @@ on:
 permissions:
   contents: read
   issues: write   # necessário para comentar o resultado no PR via issues.createComment
+  pull-requests: write
 
 concurrency:
   group: promptfoo-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
