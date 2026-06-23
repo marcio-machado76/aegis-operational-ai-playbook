@@ -6,7 +6,6 @@ on:
 
 permissions:
   contents: read
-  issues: write   # necessário para comentar o resultado no PR via issues.createComment
 
 concurrency:
   group: promptfoo-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -68,34 +67,3 @@ jobs:
             echo "::endgroup::"
           done
           exit "$failed"
-
-      # Comenta o resultado direto no PR (mesmo se o gate falhar — always()).
-      - name: Comentar resultado no PR
-        if: github.event_name == 'pull_request' && always()
-        continue-on-error: true
-        uses: actions/github-script@v8
-        with:
-          script: |
-            const det = '${{ steps.deterministic.outcome }}';
-            const judge = '${{ steps.judge.outcome }}';
-            const fmt = (outcome, labels) => {
-              if (outcome === 'success') return labels.success;
-              if (outcome === 'failure') return labels.failure;
-              if (outcome === 'skipped' || !outcome) return labels.skipped;
-              return outcome;
-            };
-            const body = [
-              '### promptfoo — resultado da suíte',
-              '',
-              `- **Gate determinístico OpenAI (barra o build):** ${fmt(det, { success: '✅ passou', failure: '❌ falhou', skipped: '⏭️ não executado' })}`,
-              `- **Juiz LLM (informativo):** ${fmt(judge, { success: '✅ executado', failure: '⚠️ falhou', skipped: '⏭️ pulado (sem secret ANTHROPIC_API_KEY)' })}`,
-              '',
-              '_Determinístico bloqueante:_ triagem-de-pods · nota-de-triagem · networkpolicy-sentinel.',
-              '_Juiz (informativo):_ causa-raiz · estrategia-de-backpressure · migracao-batch-para-streaming.',
-            ].join('\n');
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body,
-            });

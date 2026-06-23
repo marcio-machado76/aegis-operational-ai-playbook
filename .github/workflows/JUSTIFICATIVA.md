@@ -49,12 +49,16 @@ transitório, validar sem abrir PR) — custo zero, conveniência alta.
 
 | Alternativa | Ganha | Perde |
 |---|---|---|
-| `promptfoo/promptfoo-action` oficial | Menos YAML; comenta no PR automaticamente | É single-config e **falha o build em qualquer assert, inclusive o do juiz** → incompatível com a decisão a1 |
+| `promptfoo/promptfoo-action` oficial | Menos YAML; integra comentário no PR; boa referência inicial | Trata a avaliação como um bloco único: um FAIL do judge entra no mesmo resultado da suíte e pode derrubar o job (por exit code do eval e/ou threshold da suíte) → incompatível com a decisão a1 |
 | **(escolhido) Workflow explícito com `npx promptfoo`** | Controle total: separa o passo que **barra** (determinístico) do passo **informativo** (juiz `continue-on-error`); roda múltiplos configs | Mais YAML para manter |
 
-**Por quê:** a decisão a1 (juiz não barra) **exige** separar gating de informativo — o que a
-action oficial, no modelo "falha em qualquer assert", não permite. Por isso o workflow explícito.
-O comentário no PR é feito via `actions/github-script` (sem depender da action).
+**Por quê:** a decisão a1 (juiz não barra) **exige** separar gating de informativo. A
+`promptfoo-action` foi usada como **ponto de partida conceitual**, como sugerido no enunciado, mas
+não foi adotada no workflow final porque o seu modelo natural é uma avaliação única com resultado
+agregado da suíte. Nesse desenho, um FAIL do LLM-as-judge contaminaria o mesmo job do gate
+determinístico — exatamente o que queríamos evitar. Por isso o workflow final usa `npx promptfoo`
+em passos separados: um passo bloqueante só para o recorte determinístico do CP08 e outro passo
+informativo para o juiz dos prompts de saída aberta.
 
 ## 5. Erros transitórios de provedor (503/429/timeout)
 
