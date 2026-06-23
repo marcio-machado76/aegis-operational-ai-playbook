@@ -47,8 +47,8 @@ jobs:
             echo "::endgroup::"
           done
 
-      # INFORMATIVO — gate de qualidade por LLM-as-judge. continue-on-error: NÃO derruba o build
-      # (a1). Serve de sinal de qualidade no PR sem reprovar por flutuação do juiz.
+      # INFORMATIVO — gate de qualidade por LLM-as-judge. continue-on-error: NÃO derruba o build.
+      # Serve de sinal de qualidade no PR sem reprovar por flutuação do juiz.
       - name: Gate de qualidade LLM-as-judge (informativo)
         id: judge
         if: env.ANTHROPIC_API_KEY != ''

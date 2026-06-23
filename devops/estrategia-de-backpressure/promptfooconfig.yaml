@@ -1,5 +1,5 @@
 # CP10 — teste informativo (LLM-as-judge) do prompt de backpressure (saída aberta).
-# INFORMATIVO: não barra o build (decisão a1); é sinal de qualidade no PR.
+# INFORMATIVO: não barra o build; é sinal de qualidade no PR.
 # Padrão de juiz idêntico ao CP09 (causa-raiz). Juiz: OpenAI GPT-5.4 mini; gerador: Claude Haiku.
 # Exec: a partir desta pasta, `npx promptfoo@latest eval --no-cache`.
 description: CP10 juiz informativo — estratégia de backpressure

@@ -49,10 +49,10 @@ transitório, validar sem abrir PR) — custo zero, conveniência alta.
 
 | Alternativa | Ganha | Perde |
 |---|---|---|
-| `promptfoo/promptfoo-action` oficial | Menos YAML; integra comentário no PR; boa referência inicial | Trata a avaliação como um bloco único: um FAIL do judge entra no mesmo resultado da suíte e pode derrubar o job (por exit code do eval e/ou threshold da suíte) → incompatível com a decisão a1 |
+| `promptfoo/promptfoo-action` oficial | Menos YAML; integra comentário no PR; boa referência inicial | Trata a avaliação como um bloco único: um FAIL do judge entra no mesmo resultado da suíte e pode derrubar o job (por exit code do eval e/ou threshold da suíte) → incompatível com a decisão de manter o juiz como camada informativa |
 | **(escolhido) Workflow explícito com `npx promptfoo`** | Controle total: separa o passo que **barra** (determinístico) do passo **informativo** (juiz `continue-on-error`); roda múltiplos configs | Mais YAML para manter |
 
-**Por quê:** a decisão a1 (juiz não barra) **exige** separar gating de informativo. A
+**Por quê:** a decisão de manter o juiz como camada informativa **exige** separar gating de informativo. A
 `promptfoo-action` foi usada como **ponto de partida conceitual**, como sugerido no enunciado, mas
 não foi adotada no workflow final porque o seu modelo natural é uma avaliação única com resultado
 agregado da suíte. Nesse desenho, um FAIL do LLM-as-judge contaminaria o mesmo job do gate
@@ -97,6 +97,6 @@ limitações de provedor sejam confundidas com regressão de conteúdo.
 | migracao-batch-para-streaming | LLM-as-judge no elo 1 (diagnóstico) da cadeia, `promptfooconfig.yaml` próprio | informativo |
 
 Os seis prompts têm `promptfooconfig.yaml`. Os três de saída aberta usam juiz LLM (padrão do
-CP09) e, por serem informativos (a1), rodam no passo informativo do pipeline sem barrar o
+CP09) e, por serem informativos, rodam no passo informativo do pipeline sem barrar o
 build — entram como sinal de qualidade no PR. Para a cadeia de migração, o teste avalia o
 **elo 1 (diagnóstico)** como representativo da entrada da cadeia.

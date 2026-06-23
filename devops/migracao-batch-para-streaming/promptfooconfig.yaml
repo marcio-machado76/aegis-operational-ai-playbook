@@ -1,5 +1,5 @@
 # CP10 — teste informativo (LLM-as-judge) da cadeia de migração (saída aberta).
-# INFORMATIVO: não barra o build (decisão a1). Como a cadeia tem 3 elos, este teste avalia o
+# INFORMATIVO: não barra o build. Como a cadeia tem 3 elos, este teste avalia o
 # ELO 1 (diagnóstico) como representativo — a porta de entrada da cadeia. Juiz: OpenAI; gerador: Claude Haiku.
 # Exec: a partir desta pasta, `npx promptfoo@latest eval --no-cache`.
 description: "CP10 juiz informativo — migração batch→streaming (elo 1: diagnóstico)"
