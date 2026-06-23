@@ -17,7 +17,7 @@ providers:
   - id: anthropic:messages:claude-haiku-4-5-20251001     # gerador (independente do juiz)
     config:
       maxRetries: 1
-      max_tokens: 1024
+      max_tokens: 1536
 
 tests:
   - description: Cenário do Relay (CP04)

@@ -19,7 +19,7 @@ providers:
   - id: anthropic:messages:claude-haiku-4-5-20251001     # gerador da análise (independente do juiz)
     config:
       maxRetries: 1
-      max_tokens: 1024
+      max_tokens: 1536
 
 tests:
   - description: Artefatos do Cerebro (CP03) — config + métricas + logs sanitizados
