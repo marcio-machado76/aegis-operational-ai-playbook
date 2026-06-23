@@ -1,9 +1,3 @@
-# CP10 — pipeline de avaliação contínua dos prompts (promptfoo em GitHub Actions).
-# Decisões de gate (justificativa comparada em .github/workflows/JUSTIFICATIVA.md):
-#   a1) só os asserts DETERMINÍSTICOS barram o build; o juiz LLM roda mas é informativo
-#       (não-determinismo do juiz não deve reprovar um PR por flutuação).
-#   b1) roda a SUÍTE INTEIRA a cada PR (suíte pequena; custo em centavos; simples e seguro).
-#   C ) chaves em GitHub Secrets; gatilho em pull_request + execução manual (workflow_dispatch).
 name: promptfoo
 
 on:
