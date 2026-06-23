@@ -76,9 +76,6 @@ SRE e segurança operacional.
 - [migracao-batch-para-streaming](./devops/migracao-batch-para-streaming/) — cadeia de prompts para migrar um pipeline batch → streaming.
 - [networkpolicy-sentinel](./devops/networkpolicy-sentinel/) — endurecimento de uma NetworkPolicy permissiva (default-deny).
 
-> O escopo atual deste playbook está concentrado em DevOps. A convenção "uma categoria por
-> domínio" segue valendo — uma nova pasta nasce quando houver prompt de outro domínio.
-
 ## Testes e integração contínua
 
 O playbook é testado, não só guardado:
